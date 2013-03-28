@@ -30,30 +30,26 @@ class Walker_Category_Radio extends Walker {
         global $post;
 
         extract($args);
+
         if ( empty($taxonomy) )
             $taxonomy = 'category';
 
-        $name = 'radio_tax_input['.$taxonomy.']';
-
-        $checked_terms = $post->ID ? get_the_terms( $post->ID, $taxonomy) : array();
-
-        //get first term object
-        $current_term = ! empty( $checked_terms ) && ! is_wp_error( $checked_terms ) ? array_pop( $checked_terms ) : false;
-        $current_id = ( $current_term ) ? $current_term->term_id : '';
+        $name = 'tax_input['.$taxonomy.']';
 
         //small tweak so that it works for both hierarchical and non-hierarchical tax
+
         $value = is_taxonomy_hierarchical( $taxonomy ) ? $term->term_id : $term->slug;
 
         $class = in_array( $term->term_id, $popular_cats ) ? ' class="popular-category"' : '';
 
-        $output .= sprintf( "\n" . '<li id="%1$-%2$s" %3$s><label class="selectit"><input id="%4$s" type="radio" name="%5$s" value="%6$s" %7$s %8$s/> %9$s</label>' ,
+        $output .= sprintf( "\n" . '<li id="%1$s-%2$s" %3$s><label class="selectit"><input id="%4$s" type="radio" name="%5$s" value="%6$s" %7$s %8$s/> %9$s</label>' ,
                 $taxonomy, //1
                 $value, //2
                 $class, //3
                 "in-{$taxonomy}-{$term->term_id}", //4
                 $name . '[]', //5
                 esc_attr( trim( $value ) ), //6
-                checked( $current_id, $term->term_id, false ), //7
+                $checked = checked( in_array( $term->term_id, $selected_cats ), true, false ), //7
                 disabled( empty( $args['disabled'] ), false, false ), //8
                 esc_html( apply_filters( 'the_category', $term->name ) ) //9
         );

@@ -147,11 +147,18 @@ class WordPress_Radio_Taxonomy {
 
 			<div id="<?php echo $taxonomy; ?>-all" class="wp-tab-panel tabs-panel">
 				<?php
-	            $name = 'radio_tax_input[' . $taxonomy . ']';
+	            $name = 'tax_input[' . $taxonomy . ']';
 	            echo "<input type='hidden' name='{$name}[]' value='0' />"; // Allows for an empty term set to be sent. 0 is an invalid Term ID and will be ignored by empty() checks.
 	            ?>
-				<ul id="<?php echo $taxonomy; ?>checklist" class="list:<?php echo $taxonomy?> <?php if ( is_taxonomy_hierarchical ( $taxonomy ) ) { echo 'categorychecklist'; } else { echo 'tagchecklist';} ?> form-no-clear">
-					<?php wp_terms_checklist($post->ID, array( 'taxonomy' => $taxonomy, 'popular_cats' => $popular_ids ) ) ?>
+
+	            <?php
+	            	 printf( '<ul id="%schecklist" %s class="%s form-no-clear">',
+	            		 $taxonomy,
+	            		 'data-wp-lists="list:'.$taxonomy. '"',
+	            		 is_taxonomy_hierarchical( $taxonomy ) ? 'categorychecklist' : 'tagchecklist' );
+	            ?>
+
+					<?php wp_terms_checklist($post->ID, array( 'taxonomy' => $taxonomy, 'popular_cats' => $popular_ids, 'selected_cats' => (array) $current_id ) ) ?>
 				</ul>
 			</div>
 		<?php if ( current_user_can( $tax->cap->edit_terms ) ) : ?>
@@ -173,7 +180,15 @@ class WordPress_Radio_Taxonomy {
 						<?php if( is_taxonomy_hierarchical($taxonomy) ) {
 							wp_dropdown_categories( array( 'taxonomy' => $taxonomy, 'hide_empty' => 0, 'name' => 'new'.$taxonomy.'_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => '&mdash; ' . $tax->labels->parent_item . ' &mdash;', 'tab_index' => 3 ) );
 						} ?>
-						<input type="button" id="<?php echo $taxonomy; ?>-add-submit" class="add:<?php echo $taxonomy ?>checklist:<?php echo $taxonomy ?>-add button <?php if ( is_taxonomy_hierarchical ( $taxonomy ) ) { echo 'category-add-submit'; } else { echo 'radio-add-submit';} ?>" value="<?php echo esc_attr( $tax->labels->add_new_item ); ?>" tabindex="3" />
+
+						<?php
+							printf( '<input type="button" id="%1$s-add-submit" data-wp-lists="add:%1$schecklist:%1$s-add" class="button %2$s" value="%3$s" />' ,
+									$taxonomy,
+									is_taxonomy_hierarchical($taxonomy) ? 'category-add-submit' : 'radio-add-submit',
+									esc_attr( $tax->labels->add_new_item ) );
+
+						?>
+
 						<?php wp_nonce_field( 'add-'.$taxonomy, '_ajax_nonce-add-'.$taxonomy ); ?>
 						<span id="<?php echo $taxonomy; ?>-ajax-response"></span>
 					</p>
@@ -229,8 +244,8 @@ class WordPress_Radio_Taxonomy {
 	 	$terms = null;
 
 	  	// OK, we're authenticated: we need to find and save the data
-	  	if ( isset ( $_POST["radio_tax_input"]["{$this->taxonomy}"] ) )  {
-	  		$terms = $_POST["radio_tax_input"]["{$this->taxonomy}"];
+	  	if ( isset ( $_POST["tax_input"]["{$this->taxonomy}"] ) )  {
+	  		$terms = $_POST["tax_input"]["{$this->taxonomy}"];
 	  	}
 
 	  	// WordPress always saves a zero/null integer which we will want to skip
@@ -301,7 +316,7 @@ class WordPress_Radio_Taxonomy {
 
 		//if all is successful, build the new radio button to send back
 		$id = $taxonomy.'-'.$tag->term_id;
-		$name = 'radio_tax_input[' . $taxonomy . ']';
+		$name = 'tax_input[' . $taxonomy . ']';
 
 		$html ='<li id="'.$id.'"><label class="selectit"><input type="radio" id="in-'.$id.'" name="'.$name.'" value="' . $tag->slug .'" checked="checked"/>&nbsp;'. $tag->name.'</label></li>';
 
@@ -445,7 +460,7 @@ class WordPress_Radio_Taxonomy {
 					<span class="catshow"><?php _e( '[more]' ); ?></span>
 					<span class="cathide" style="display:none;"><?php _e( '[less]' ); ?></span>
 				</span>
-				<input type="hidden" name="<?php echo 'radio_tax_input[' . esc_attr( $this->taxonomy ) . '][]'; ?>" value="0" />
+				<input type="hidden" name="<?php echo 'tax_input[' . esc_attr( $this->taxonomy ) . '][]'; ?>" value="0" />
 				<ul id="<?php echo $this->taxonomy ?>" class="radio-checklist cat-checklist <?php echo esc_attr( $this->tax_obj->labels->name )?>-checklist">
 					<?php wp_terms_checklist( null, array( 'taxonomy' => $this->taxonomy ) ) ?>
 				</ul>

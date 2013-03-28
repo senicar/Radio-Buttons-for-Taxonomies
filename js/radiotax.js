@@ -11,11 +11,11 @@
 		taxonomyParts = this_id.split('-');
 		taxonomyParts.shift();
 		taxonomy = taxonomyParts.join('-');
- 		settingName = taxonomy + '_tab';
- 		if ( taxonomy == 'category' )
- 			settingName = 'cats';
+		settingName = taxonomy + '_tab';
+		if ( taxonomy == 'category' )
+			settingName = 'cats';
 
-		// TODO: move to jQuery 1.3+, support for multiple hierarchical taxonomies, see wp-lists.dev.js
+		// TODO: move to jQuery 1.3+, support for multiple hierarchical taxonomies, see wp-lists.js
 		$('a', '#' + taxonomy + '-tabs').click( function(){
 			var t = $(this).attr('href');
 			$(this).parent().addClass('tabs').siblings('li').removeClass('tabs');
@@ -33,6 +33,13 @@
 
 		// Ajax Cat
 		$('#new' + taxonomy).one( 'focus', function() { $(this).val( '' ).removeClass( 'form-input-tip' ) } );
+
+		$('#new' + taxonomy).keypress( function(event){
+			if( 13 === event.keyCode ) {
+				 event.preventDefault();
+				 $('#' + taxonomy + '-add-submit').click();
+			}
+		});
 		$('#' + taxonomy + '-add-submit').click( function(){ $('#new' + taxonomy).focus(); });
 
 		syncChecks = function() {
@@ -47,6 +54,7 @@
 		catAddBefore = function( s ) {
 			if ( !$('#new'+taxonomy).val() )
 				return false;
+			//only submit one value, so don't serialize which will include the existing checked data
 			//s.data += '&' + $( ':checked', '#'+taxonomy+'checklist' ).serialize();
 			$( '#' + taxonomy + '-add-submit' ).prop( 'disabled', true );
 			return s;
@@ -58,19 +66,17 @@
 			//fix for popular radio buttons- when new term is added -uncheck all
         	$('#' + taxonomy + 'checklist-pop :radio').prop('checked',false);
 
-			$( '#' + taxonomy + '-add-submit' ).prop( 'disabled', false );
+        	$( '#' + taxonomy + '-add-submit' ).prop( 'disabled', false );
 			if ( 'undefined' != s.parsed.responses[0] && (sup = s.parsed.responses[0].supplemental.newcat_parent) ) {
 				drop.before(sup);
 				drop.remove();
 
+				// get ID of response value
 				id = $(s.parsed.responses[0].data).find('input').attr('value');
 
 				//if an existing term is added, check it in the popular list too
 				$('#in-popular-' + taxonomy + '-' + id ).prop('checked', true);
 			}
-
-
-
 		};
 
 		//use wpList to handle hierarchical taxonomies
@@ -81,8 +87,10 @@
 			addAfter: catAddAfter
 		});
 
+
 		// wpList doesn't work well with non hierarchical taxonomies so we'll need to do that outselves via ajax
 		$('#' + taxonomy +'-add .radio-add-submit').on( 'click', function(){
+
 			var term = $.trim( $('#' + taxonomy+'-add #new'+taxonomy).val() );
 			var nonce =$('#_ajax_nonce-add-' + taxonomy ).val();
 
@@ -127,6 +135,7 @@
 
 	    });
 
+		// show input for adding new term
 		$('#' + taxonomy + '-add-toggle').click( function() {
 			$('#' + taxonomy + '-adder').toggleClass( 'wp-hidden-children' );
 			$('a[href="#' + taxonomy + '-all"]', '#' + taxonomy + '-tabs').click();
@@ -134,13 +143,12 @@
 			return false;
 		});
 
-		//fix for radio buttons- if click on popular select on all and vice versa
-        $('#' + taxonomy + '-all li :radio, #' + taxonomy + '-pop li :radio').on('click', function(){
-            var t = $(this), c = t.is(':checked'), id = t.val();
-            $('#' + taxonomy + '-all li :radio, #' + taxonomy + '-pop li :radio').prop('checked',false);
-            $('#' + taxonomy + '-all li :radio[value="'+id+'"], #' + taxonomy + '-pop li :radio[value="'+id+'"]').prop( 'checked', c );
-	    });  //end on radio click
-
+		// keep popular and all term tabs in sync
+		$('#' + taxonomy + 'checklist li.popular-category input[type="checkbox"], #' + taxonomy + 'checklist-pop input[type="checkbox"]').on( 'click', function(){
+			var t = $(this), c = t.is(':checked'), id = t.val();
+			if ( id && t.parents('#taxonomy-'+taxonomy).length )
+				$('#in-' + taxonomy + '-' + id + ', #in-popular-' + taxonomy + '-' + id).prop( 'checked', c );
+		});
 	}); // end taxonomy metaboxes
 
 
